@@ -1,0 +1,5 @@
+Dependencies:
+    python modules:
+        unidecode
+        ply
+    antlr4
