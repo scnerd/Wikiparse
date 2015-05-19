@@ -4,7 +4,7 @@ global WIKITEXT, JSON
 global PAGE_INDEX, REVISION_INDEX
 
 import gzip as zip
-import os, json, csv
+import os, json, csv, re
 from unidecode import unidecode
 
 WIKITEXT = "wtxt"
@@ -13,15 +13,20 @@ JSON = "json"
 config = json.load(open("config.json"))
 root_dir = config['cache_dir']
 PAGE_INDEX = config['page_index']
-REVISION_INDEX = config['revision_index']
+#REVISION_INDEX = config['revision_index']
+disallowed_filenames = config['disallowed_file_names']
 
 dir_nesting = config['dir_nesting']
 
 def _pick_dir(cleaned):
-    return tuple([cleaned[i] if i < len(cleaned) else None for i in range(dir_nesting)])
+    cleaned = [c.upper() for c in cleaned if c.isalnum()]
+    return tuple([cleaned[i] for i in range(min(len(cleaned), dir_nesting))])
 
+cleaner = re.compile(r"[^\(\)\-\_\.\s\w\d]|^[^\w\d]")
 def _clean_title(title):
-    clean = unidecode(title)
+    clean = cleaner.sub("_", unidecode(title).strip())
+    if clean.lower() in disallowed_filenames:
+        clean = disallowed_filenames[clean.lower()]
     return _pick_dir(clean), clean
 
 def _pick_path(title, ext):
@@ -29,11 +34,25 @@ def _pick_path(title, ext):
     return os.path.join(os.path.join(root_dir, *dirs), "%s.%s" % (cleaned, ext))
 
 
+index = None
+def start_recording_index():
+    global index
+    index = []
+
+def finish_recording_index():
+    global index
+    zip.open(PAGE_INDEX, 'wb').write(json.dumps({i: index[i] for i in range(len(index))}))
+
+def read_index():
+    return json.loads(zip.open(PAGE_INDEX, 'rb').read())
+
 def _write_page(title, type, content):
     path = _pick_path(title, type)
     dirs_path = os.path.dirname(path)
     if not os.path.exists(dirs_path):
         os.makedirs(dirs_path)
+    if index is not None:
+        index.append((title, path))
     zip.open(path, "wb").write(content)
 
 def write_wikitext(title, content):

@@ -2,70 +2,42 @@
 
 DB_NAME = "wikipedia.sqlite"
 
-import os, gzip, argparse, sys, re
+import gzip, argparse, sys
 from xml.etree import ElementTree as ET
 import atexit
-from unidecode import unidecode
 from time import time
+import filemanager
 
 global args
 
-SQL_CREATE = r"CREATE TABLE pages (id INTEGER PRIMARY KEY, title TEXT, xml_zip BLOB);"
-SQL_INSERT = r"INSERT INTO pages (title, xml_zip) VALUES (?,?);"
-
 atexit.register(lambda: print("wikisplitter has closed gently"))
-import sqlite3 as sql
-def initialize_sql(output_directory):
-    global args
-    path = os.path.join(output_directory, DB_NAME)
-    initialize = False
-    if not os.path.isfile(path):
-        initialize = True
-    connection = sql.connect(path)
-    atexit.register(connection.close)
-    atexit.register(connection.commit)
-    if initialize:
-        cur = connection.cursor()
-        cur.execute(SQL_CREATE)
-        connection.commit()
-    return connection
 
-cleaner = re.compile(r"[^\(\)\-\_\.\s\w\d]|^[^\w\d]")
-
-def normalize_title(title):
-    return cleaner.sub("_", unidecode(title).strip())
+def verbose(txt):
+    if args.verbose:
+        print(txt)
 
 def split_xml(xml_stream):
+    verbose("Initializing...")
     num = 0
     prev_time = 0
 
-    cursor = initialize_sql(args.output)
-    commit_queue = []
-    def push():
-        nonlocal commit_queue
-        cursor.executemany(SQL_INSERT, commit_queue)
-        cursor.commit()
-        commit_queue = []
-    def output_page(title, page):
-        nonlocal commit_queue
-        commit_queue.append((title, gzip.compress(page)))
-        if len(commit_queue) >= args.commit:
-            push()
+    filemanager.start_recording_index()
+    output_page = filemanager.write_wikitext
 
     for title, page in find_pages(xml_stream):
         num += 1
-        if args.verbose:
-            print(title)
-        else:
-            if time() - prev_time >= .1:
-                prev_time = time()
-                #tr.print_diff()
-                #print(num)
+        if time() - prev_time >= .1:
+            prev_time = time()
+            if args.verbose:
+                sys.stdout.write("%d - % -79s\r" % (num, title[:79]))
+                sys.stdout.flush()
+            else:
                 sys.stdout.write("%d\r" % num)
                 sys.stdout.flush()
         output_page(title, page)
-    push()
-    cursor.close()
+    verbose("\nWriting index...")
+    filemanager.finish_recording_index()
+    verbose("Done")
 
 
 def find_pages(xml_stream):
@@ -74,7 +46,7 @@ def find_pages(xml_stream):
         nonlocal unknown_index
         for el in list(page_element): # Children of this element
             if el.tag.rpartition('}')[2] == 'title':
-                return normalize_title(el.text)
+                return el.text
         unknown_index += 1
         return "UNKNOWN_%d" % unknown_index
 

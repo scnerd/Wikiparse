@@ -2,4 +2,6 @@ Dependencies:
     python modules:
         unidecode
         ply
+        py4j
+        gzip (standard?)
     antlr4

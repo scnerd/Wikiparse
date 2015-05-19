@@ -1,4 +1,4 @@
-from zip_splitter import DB_NAME
+from wikisplitter import DB_NAME
 import sqlite3 as sql
 import bz2, argparse, os, atexit
 
