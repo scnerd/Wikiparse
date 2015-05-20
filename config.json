@@ -2,7 +2,7 @@
     "db_directory": "./wikipedia",
     "try_pulls": false,
     "cache_pulls": true,
-    "cache_dir": "wikipedia",
+    "cache_dir": "../wikipedia",
     "page_index": "pages.zip",
     "dir_nesting": 3,
     "fetch_url": "http://en.wikipedia.org/w/index.php?%s",
