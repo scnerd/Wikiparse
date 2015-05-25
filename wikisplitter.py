@@ -22,7 +22,12 @@ def split_xml(xml_stream):
     prev_time = 0
 
     filemanager.start_recording_index()
-    output_page = lambda ttl, cnt: filemanager.write_wikitext(ttl, cnt, overwrite=args.update)
+    def output_page(ttl, cnt):
+        try:
+            filemanager.write_wikitext(ttl, cnt, overwrite=args.update)
+        except Exception as ex:
+            print("Failed to output page: %s\n%s" % (ttl, repr(ex)))
+
 
     verbose("Extracting pages into individual files...")
     for title, page in find_pages(xml_stream):

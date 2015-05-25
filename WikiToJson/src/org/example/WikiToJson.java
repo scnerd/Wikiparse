@@ -97,7 +97,8 @@ public class WikiToJson extends Visitor {
 		IMAGE = "image",
 		TEMPLATE = "template",
 		REDIRECTION = "redirection",
-		POINTER = "pointer";
+		POINTER = "pointer",
+		TEMPLATE_ARG = "template_arg";
 
 		public String type;
 		public Context parent;
@@ -205,6 +206,7 @@ public class WikiToJson extends Visitor {
 	}
 
 	public Stack<String> curTextProperties;
+	public int textPropNumber = 1;
 
 	private class TextElement extends PageElement {
 
@@ -307,6 +309,8 @@ public class WikiToJson extends Visitor {
 			this.body = body;
 			
 			curPage.sections.add(new ContextPointer(this));
+			
+			this.content.add(new ContextPointer(this.body));
 		}
 		
 		public JsonObject toJson() {
@@ -380,12 +384,12 @@ public class WikiToJson extends Visitor {
 		
 		public TemplateArgumentElement(Context name, Context value) {
 			super(CTXT_TEMPLATE + "arg");
-			type = TEXT;
+			type = TEMPLATE_ARG;
 			this.name = name;
 			this.value = value;
 			
-			this.content.add(name);
-			this.content.add(value);
+			this.content.add(new ContextPointer(name));
+			this.content.add(new ContextPointer(value));
 		}
 		
 		public JsonObject toJson() {
@@ -498,6 +502,8 @@ public class WikiToJson extends Visitor {
 	 */
 	private void textProperty(String property, AstNode toIterate) {
 		if(toIterate != null) {
+			int num = textPropNumber++;
+			property = String.format("%s(%d)", property, num);
 			curTextProperties.push(property);
 			iterate(toIterate);
 			curTextProperties.pop();
@@ -594,7 +600,6 @@ public class WikiToJson extends Visitor {
 		
 		Context ctxt = new SectionElement(section.getLevel(), title, body);
 		title.parent = body.parent = ctxt;
-		enterContext(ctxt, section);
 	}
 	//public void visit (SemiPre semiPre) { }
 	//public void visit (SemiPreLine semiPreLine) { }
@@ -675,7 +680,7 @@ public class WikiToJson extends Visitor {
 	// ****************************************************************************
 
 	/* Command-line execution code
-	public static void main(String[] args) throws FileNotFoundException,
+	public static void trial_run(String[] args) throws FileNotFoundException,
 			IOException, LinkTargetException, CompilerException {
 		if (args.length < 1) {
 			System.err.println("Usage: java -jar WikiToJson.jar TITLE [-p]");

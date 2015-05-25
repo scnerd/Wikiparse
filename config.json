@@ -1,6 +1,6 @@
 {
     "db_directory": "./wikipedia",
-    "try_pulls": false,
+    "try_pulls": true,
     "cache_pulls": true,
     "cache_dir": "../wikipedia",
     "page_index": "pages.zip",
@@ -29,5 +29,6 @@
         "lpt7": "special_lpt7",
         "lpt8": "special_lpt8",
         "lpt9": "special_lpt9"
-    }
+    },
+    "verbose_filemanager": false
 }
