@@ -46,8 +46,8 @@ public class WikiToJson extends Visitor {
 
 	private class WikiPage {
 		public Context root, refs;
-		public ArrayList<LinkElement> internalLinks = new ArrayList<LinkElement>();
-		public ArrayList<LinkElement> externalLinks = new ArrayList<LinkElement>();
+		public ArrayList<ContextPointer> internalLinks = new ArrayList<ContextPointer>();
+		public ArrayList<ContextPointer> externalLinks = new ArrayList<ContextPointer>();
 		public ArrayList<ContextPointer> sections = new ArrayList<ContextPointer>();
 		
 		public JsonObject toJson() {
@@ -56,12 +56,12 @@ public class WikiToJson extends Visitor {
 			json.add("refs", refs.toJson());
 			
 			JsonArray internals = new JsonArray();
-			for(LinkElement item : internalLinks) {
+			for(ContextPointer item : internalLinks) {
 				internals.add(item.toJson());
 			}
 			
 			JsonArray externals = new JsonArray();
-			for(LinkElement item : externalLinks) {
+			for(ContextPointer item : externalLinks) {
 				externals.add(item.toJson());
 			}
 			
@@ -120,6 +120,9 @@ public class WikiToJson extends Visitor {
 			json.addProperty("type", this.type);
 			return json;
 		}
+		
+		public String checkString(String s)
+		{ return s == null ? "" : s; }
 	}
 
 	private class Context extends PageElement {		
@@ -255,7 +258,7 @@ public class WikiToJson extends Visitor {
 			type = internal ? INTERNAL_LINK : EXTERNAL_LINK;
 			this.target = target;
 			
-			(internal ? curPage.internalLinks : curPage.externalLinks).add(this);
+			(internal ? curPage.internalLinks : curPage.externalLinks).add(new ContextPointer(this));
 			defaultText = new TextElement(target);
 		}
 		
@@ -310,7 +313,7 @@ public class WikiToJson extends Visitor {
 			
 			curPage.sections.add(new ContextPointer(this));
 			
-			this.content.add(new ContextPointer(this.body));
+			//this.content.add(this.body);
 		}
 		
 		public JsonObject toJson() {
@@ -326,7 +329,7 @@ public class WikiToJson extends Visitor {
 		public String linkPage;
 		public String linkUrl;
 		public String target;
-		public Context title;
+		public ContextPointer title;
 
 		public ImageElement(String linkPage, String linkUrl, String target,
 				Context title) {
@@ -335,7 +338,9 @@ public class WikiToJson extends Visitor {
 			this.linkPage = linkPage;
 			this.linkUrl = linkUrl;
 			this.target = target;
-			this.title = title;
+			this.title = new ContextPointer(title);
+			
+			this.content.add(title);
 		}
 		
 		public String allText()
@@ -343,7 +348,8 @@ public class WikiToJson extends Visitor {
 		
 		public JsonObject toJson() {
 			JsonObject json = super.toJson();
-			json.addProperty("page", linkPage);
+			json.addProperty("link_page", checkString(linkPage));
+			//json.addProperty("JUNK", "!@#$");
 			json.addProperty("url", linkUrl);
 			json.addProperty("target", target);
 			json.add("title", title.toJson());
@@ -370,26 +376,35 @@ public class WikiToJson extends Visitor {
 	public class RedirectionElement extends TextElement {
 		public static final String REDIR_PROP = "redirection";
 		
+		public String target;
+		
 		public RedirectionElement(String target)
 		{
 			super(target);
 			type = REDIRECTION;
+			this.target = target;
 			this.properties = new String[]{REDIR_PROP};
+		}
+		
+		public JsonObject toJson() {
+			JsonObject json = super.toJson();
+			json.addProperty("target", this.target);
+			return json;
 		}
 	}
 	
 	public class TemplateArgumentElement extends Context {
-		public Context name;
-		public Context value;
+		public ContextPointer name;
+		public ContextPointer value;
 		
 		public TemplateArgumentElement(Context name, Context value) {
 			super(CTXT_TEMPLATE + "arg");
 			type = TEMPLATE_ARG;
-			this.name = name;
-			this.value = value;
+			this.name = new ContextPointer(name);
+			this.value = new ContextPointer(value);
 			
-			this.content.add(new ContextPointer(name));
-			this.content.add(new ContextPointer(value));
+			this.content.add(name);
+			this.content.add(value);
 		}
 		
 		public JsonObject toJson() {
@@ -600,6 +615,7 @@ public class WikiToJson extends Visitor {
 		
 		Context ctxt = new SectionElement(section.getLevel(), title, body);
 		title.parent = body.parent = ctxt;
+		curContext.content.add(ctxt);
 	}
 	//public void visit (SemiPre semiPre) { }
 	//public void visit (SemiPreLine semiPreLine) { }
@@ -656,7 +672,7 @@ public class WikiToJson extends Visitor {
 		case "ref":
 			Context ref = new Context("tag_extension_ref");
 			ref.parent = curPage.refs;
-			curContext.content.add(new ContextPointer(ref));
+			curContext.content.add(ref);
 			enterNewContext(ref, tagExtension.getXmlAttributes());
 			break;
 		default:

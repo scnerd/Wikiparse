@@ -4,14 +4,16 @@ global WIKITEXT, JSON
 global PAGE_INDEX, REVISION_INDEX
 
 import gzip as zip
-import os, json, re, atexit, itertools
+import os, json, re, atexit
 from unidecode import unidecode
 
 WIKITEXT = "wtxt"
 JSON = "json"
 
-config = json.load(open("config.json"))
-root_dir = config['cache_dir']
+WIKIPARSE_DIR = os.path.dirname(__file__)
+
+config = json.load(open(os.path.join(WIKIPARSE_DIR, "config.json")))
+root_dir = os.path.join(WIKIPARSE_DIR, config['cache_dir'])
 PAGE_INDEX = os.path.join(root_dir, config['page_index'])
 PAGE_INDEX_RAW = PAGE_INDEX.rpartition(".")[0] + ".json"
 #REVISION_INDEX = config['revision_index']
@@ -116,10 +118,13 @@ def _fetch_wikitext(title):
     import urllib.request as url
     _verbose("Pulling '%s' from wikipedia" % title)
     params = urllib.parse.urlencode({'action': 'raw', 'title': title})
-    wikitext = url.urlopen(config['fetch_url'] % params).read()
+    try:
+        wikitext = url.urlopen(config['fetch_url'] % params).read()
+    except urllib.error.HTTPError:
+        return None
     if config['cache_pulls']:
         write_wikitext(title, wikitext)
-    return wikitext
+    return str(wikitext, 'UTF-8')
 
 gateway = None
 def initialize_wikiparser():
@@ -129,7 +134,7 @@ def initialize_wikiparser():
     if gateway is None:
         _verbose("Launching gateway")
         # Launch gateway server
-        wikitojson = subprocess.Popen(["java", "-jar", "./WikiToJson.jar"], stdout=subprocess.PIPE, universal_newlines=True)
+        wikitojson = subprocess.Popen(["java", "-jar", os.path.join(WIKIPARSE_DIR, "WikiToJson.jar")], stdout=subprocess.PIPE, universal_newlines=True)
         atexit.register(wikitojson.kill)
         wikitojson.stdout.read() # Wait until the gateway has launched
         _verbose("Gateway launched")
