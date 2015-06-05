@@ -1,6 +1,6 @@
 import re
 import collections
-from . import filemanager
+import filemanager
 import json
 from collections import OrderedDict as odict
 

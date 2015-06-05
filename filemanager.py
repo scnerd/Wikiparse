@@ -1,4 +1,10 @@
-
+'''
+.. module:: filemanager
+   :platform: Unix, Windows
+   :synopsis: Manages all loading and caching of data for wikiparse.
+   
+.. moduleauthor:: David Maxson <jexmax@gmail.com>
+'''
 
 global WIKITEXT, JSON
 global PAGE_INDEX, REVISION_INDEX
@@ -44,6 +50,12 @@ def _clean_title(title):
     return clean
 
 def possible_titles(partial_title):
+    '''Retrieves all cached pages starting with the specified title text.
+    
+    :param partial_title: The beginning of a title.
+    :type partial_title: str.
+    :returns: generator of str -- a generator that provides the possible title names matching the specified title beginning
+    '''
     cleaned = _clean_title(partial_title).lower()
     dir = os.path.join(root_dir, *_pick_dir(cleaned))
     for dirpath, dirnames, filenames in os.walk(dir):
