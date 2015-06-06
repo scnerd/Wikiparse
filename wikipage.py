@@ -1,19 +1,20 @@
 import re
 import collections
-from . import filemanager
+import filemanager
 import json
 from collections import OrderedDict as odict
 
 
 class PageElement(object):
-    def __init__(self, page, cur_section, json_data, make_fake=False):
+    def __init__(self, page, cur_section, parent, json_data, make_fake=False):
+        self.section = cur_section
+        self.page = page
+        self.parent = parent
+        self._iter_elements = []
         if not make_fake:
             self.el_id = json_data['id']
             self.el_type = json_data['type']
-            self.section = cur_section
-            self.page = page
             self.page.all_elements[self.el_id] = self
-        self._iter_elements = []
 
     def __iter__(self):
         self._iterator = (el for el in self._iter_elements)
@@ -25,20 +26,23 @@ class PageElement(object):
     def get_text(self):
         return RichText(self)
 
+    def part_of(self):
+        return set([type(self)]).union([] if self.parent is None else self.parent.part_of())
+
     def __str__(self):
         return str(self.get_text())
 
 class Context(PageElement): # Make iterable
-    def __init__(self, page, cur_section, json_data, make_fake=False):
-        super(Context, self).__init__(page, cur_section, json_data, make_fake)
+    def __init__(self, page, cur_section, parent, json_data, make_fake=False):
+        super(Context, self).__init__(page, cur_section, parent, json_data, make_fake)
         if not make_fake:
             self.label = json_data['label']
-            self.children = [construct(page, cur_section, el) for el in json_data['children']] if 'children' in json_data else []
-            self._iter_elements = None
+            self.children = [construct(page, cur_section, self, el) for el in json_data['children']] if 'children' in json_data else []
+        self._iter_elements = None
 
     @staticmethod
-    def fake(label, children):
-        ret = Context(None, None, None, make_fake=True)
+    def _fake(label, children):
+        ret = Context(None, None, None, None, make_fake=True)
         ret.label = label
         ret.children = children
         return ret
@@ -55,8 +59,8 @@ class Context(PageElement): # Make iterable
 class Text(PageElement):
     property_splitter = re.compile(r'^(.+)\((\d+)\)$')
 
-    def __init__(self, page, cur_section, json_data):
-        super(Text, self).__init__(page, cur_section, json_data)
+    def __init__(self, page, cur_section, parent, json_data):
+        super(Text, self).__init__(page, cur_section, parent, json_data)
         self.text = str(json_data['text'])
         Prop = collections.namedtuple('Prop', ['id', 'type'])
         self.properties = [str(prop) for prop in json_data['properties']]
@@ -65,10 +69,10 @@ class Text(PageElement):
         self._iter_elements = ['text']
 
 class Link(Context):
-    def __init__(self, page, cur_section, json_data):
-        super(Link, self).__init__(page, cur_section, json_data)
+    def __init__(self, page, cur_section, parent, json_data):
+        super(Link, self).__init__(page, cur_section, parent, json_data)
         self.target = json_data['target']
-        self.default_text = construct(page, cur_section, json_data['default_text'])
+        self.default_text = construct(page, cur_section, self, json_data['default_text'])
         self.text = self.default_text if len(self.children) == 0 else self
         if len(self.children) == 0:
             self._iter_elements = ['default_text']
@@ -80,60 +84,60 @@ class Link(Context):
                 self._iter_elements.append(label)
 
 class InternalLink(Link):
-    def __init__(self, page, cur_section, json_data):
-        super(InternalLink, self).__init__(page, cur_section, json_data)
+    def __init__(self, page, cur_section, parent, json_data):
+        super(InternalLink, self).__init__(page, cur_section, parent, json_data)
 
 class ExternalLink(Link):
-    def __init__(self, page, cur_section, json_data):
-        super(ExternalLink, self).__init__(page, cur_section, json_data)
+    def __init__(self, page, cur_section, parent, json_data):
+        super(ExternalLink, self).__init__(page, cur_section, parent, json_data)
 
 class Heading(Context):
-    def __init__(self, page, cur_section, json_data):
-        super(Heading, self).__init__(page, cur_section, json_data)
+    def __init__(self, page, cur_section, parent, json_data):
+        super(Heading, self).__init__(page, cur_section, parent, json_data)
         self.level = json_data['level']
 
 class Section(Context):
-    def __init__(self, page, cur_section, json_data, make_fake=False):
-        super(Section, self).__init__(page, cur_section, json_data, make_fake)
+    def __init__(self, page, cur_section, parent, json_data, make_fake=False):
+        super(Section, self).__init__(page, cur_section, parent, json_data, make_fake)
         if not make_fake:
             self.level = json_data['level']
-            self.title = construct(page, self, json_data['title'])
-            self.body = construct(page, self, json_data['body'])
+            self.title = construct(page, self, self, json_data['title'])
+            self.body = construct(page, self, self, json_data['body'])
         self._iter_elements = ['body']
 
     @staticmethod
-    def _fake(title=""):
-        ret = Section(None, None, None, make_fake=True)
+    def _fake(title="", body=[]):
+        ret = Section(None, None, None, None, make_fake=True)
         ret.level = -1
         ret.title = title
-        ret.body = []
+        ret.body = body
         return ret
 
 class Image(Context):
-    def __init__(self, page, cur_section, json_data):
-        super(Image, self).__init__(page, cur_section, json_data)
+    def __init__(self, page, cur_section, parent, json_data):
+        super(Image, self).__init__(page, cur_section, parent, json_data)
         self.page = json_data['link_page']
         self.url = json_data['url']
         self.target = json_data['target']
-        self.title = construct(page, cur_section, json_data['title'])
+        self.title = construct(page, cur_section, self, json_data['title'])
         self._iter_elements = [] # Prevents inner text from appearing as plaintext output
 
 class Template(Context):
-    def __init__(self, page, cur_section, json_data):
-        super(Template, self).__init__(page, cur_section, json_data)
-        self.title = construct(page, cur_section, json_data['title'])
+    def __init__(self, page, cur_section, parent, json_data):
+        super(Template, self).__init__(page, cur_section, parent, json_data)
+        self.title = construct(page, cur_section, self, json_data['title'])
         #self._iter_elements = [] # Prevents inner text from appearing as plaintext output
 
 class TemplateArg(Context):
-    def __init__(self, page, cur_section, json_data):
-        super(TemplateArg, self).__init__(page, cur_section, json_data)
-        self.name = construct(page, cur_section, json_data['name'])
-        self.value = construct(page, cur_section, json_data['value'])
+    def __init__(self, page, cur_section, parent, json_data):
+        super(TemplateArg, self).__init__(page, cur_section, parent, json_data)
+        self.name = construct(page, cur_section, self, json_data['name'])
+        self.value = construct(page, cur_section, self, json_data['value'])
         #self._iter_elements = [] # Prevents inner text from appearing as plaintext output
 
 class Redirection(Text):
-    def __init__(self, page, cur_section, json_data):
-        super(Redirection, self).__init__(page, cur_section, json_data)
+    def __init__(self, page, cur_section, parent, json_data):
+        super(Redirection, self).__init__(page, cur_section, parent, json_data)
         self.target = json_data['target']
         self._iter_elements = [] # Prevents inner text from appearing as plaintext output
 
@@ -151,13 +155,13 @@ type_mapping = {
     'pointer': None
 }
 
-def construct(page, cur_section, json_data): # introduce current section
+def construct(page, cur_section, parent, json_data): # introduce current section
     p_type = json_data['type']
     if p_type == "pointer":
         return page.all_elements[json_data['target']]
     else:
         try:
-            element = type_mapping[p_type](page, cur_section, json_data)
+            element = type_mapping[p_type](page, cur_section, parent, json_data)
             return element
         except Exception as ex:
             print("ERROR ON ELEMENT %d" % json_data['id'])
@@ -181,10 +185,13 @@ class RichText(object):
             visited.add(element)
             for sub_el in element:
                 if type(sub_el) == str:
-                    self._flat.append((sub_el, element.properties))
+                    self._flat.append((sub_el, element))
                     self._lens.append(len(sub_el))
                 else:
                     self._flatten(sub_el, visited)
+
+    def groups(self):
+        return self._flat
 
     def __getitem__(self, item):
         item = int(item)
@@ -193,8 +200,8 @@ class RichText(object):
         for i in range(len(self._lens)):
             cur_len = self._lens[i]
             if item < cur_len:
-                cur_txt, cur_props = self._flat[i]
-                return cur_txt[item], cur_props
+                cur_txt, cur_elem = self._flat[i]
+                return cur_txt[item], cur_elem
             item -= cur_len
         raise IndexError("Index out of bounds")
 
@@ -202,7 +209,7 @@ class RichText(object):
         return self._total_len
 
     def __str__(self):
-        return "".join(txt for txt,props in self._flat)
+        return "".join(txt for txt,elem in self._flat)
 
 
 
@@ -217,13 +224,13 @@ class WikiPage(object):
         self.no_section = Section._fake("__NONE")
 
         self.all_elements = {}
-        self.root = construct(self, self.root_section, json_data['root'])
-        self.refs = construct(self, self.no_section, json_data['refs'])
-        self.internals = [construct(self, self.no_section, el) for el in json_data['internal_links']]
-        self.externals = [construct(self, self.no_section, el) for el in json_data['external_links']]
-        self.sections = [construct(self, self.no_section, el) for el in json_data['sections']]
+        self.root = construct(self, self.root_section, None, json_data['root'])
+        self.refs = construct(self, self.no_section, None, json_data['refs'])
+        self.internals = [construct(self, self.no_section, None, el) for el in json_data['internal_links']]
+        self.externals = [construct(self, self.no_section, None, el) for el in json_data['external_links']]
+        self.sections = [construct(self, self.no_section, None, el) for el in json_data['sections']]
         self.sections = odict([(str(sec.title).strip(), sec) for sec in self.sections])
-        #self.intro = Context.fake("INTRO", [el for el in self.root['__root'] if type(el) is not Section])
+        self.intro = Context._fake("INTRO", [el for el in self.root[0] if type(el) is not Section])
 
     @staticmethod
     def resolve_page(title, follow_redictions=True):

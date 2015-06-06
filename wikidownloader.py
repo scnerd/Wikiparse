@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from collections import OrderedDict
 import urllib.request
 from bs4 import BeautifulSoup as BS
@@ -34,7 +36,7 @@ class Menu(object):
     def __init__(self, title, items):
         self.title = title
         self._options = items
-        self._options['back'] = lambda: True
+        self._options['BACK'] = lambda: True
 
     def __call__(self, *args, **kwargs):
         return self.handle_loop()
@@ -109,6 +111,14 @@ class DateMenu(Menu):
             return TypeMenu()()
         return inner
 
+common_types = OrderedDict([
+    ("pages-articles", "RECOMMENDED for use with wikiparse toolchain: Current revisions only, no talk or user pages; this is probably what you want, and is approximately 10 GB compressed (expands to over 40 GB when uncompressed)."),
+    ("pages-meta-current", "Current revisions only, all pages (including talk)"),
+    ("abstract", "Page abstracts"),
+    ("all-titles-in-ns", "Article titles only (with redirects)"),
+    ("For more information, see", r"https://en.wikipedia.org/wiki/Wikipedia:Database_download")
+])
+
 class TypeMenu(Menu):
     def __init__(self):
         global AVAIL_LINKS
@@ -125,6 +135,7 @@ class TypeMenu(Menu):
         printable_links = [mtch.group(1) for mtch in printable_links if mtch is not None]
         printable_links = [el for el in unique(printable_links) if len(el.strip()) > 0]
         types = OrderedDict([(lnk, self.pick_type(lnk)) for lnk in printable_links])
+        types["HELP"] = self.help
 
         super(TypeMenu, self).__init__("Type selection (use 'pages-articles' for wikiparse toolchain)", types)
 
@@ -134,6 +145,10 @@ class TypeMenu(Menu):
             DL_TYPE = type
             return FileMenu()()
         return inner
+
+    def help(self):
+        print("\n".join("%s: %s" % help_topic for help_topic in common_types))
+        return Menu.LOOP
 
 class FileMenu(Menu):
     def __init__(self):
