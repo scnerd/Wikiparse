@@ -2,7 +2,7 @@ Documentation for Wikiparse
 ***************************
 
 
-wikipage -- auto members
+wikipage
 ========================
 
 JUNK TEXT 1
@@ -10,7 +10,7 @@ JUNK TEXT 1
 .. automodule:: wikipage
    :members:
 
-wikidownloader -- auto members
+wikidownloader
 ==============================
 
 JUNK TEXT 2
@@ -18,7 +18,7 @@ JUNK TEXT 2
 .. automodule:: wikidownloader
    :members:
 
-wikisplitter -- auto members
+wikisplitter
 ============================
 
 JUNK TEXT 3
@@ -26,7 +26,7 @@ JUNK TEXT 3
 .. automodule:: wikisplitter
    :members:
 
-filemanager -- auto members
+filemanager
 ===========================
 
 JUNK TEXT 4
