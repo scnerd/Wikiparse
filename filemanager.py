@@ -1,7 +1,8 @@
 '''
-.. module:: filemanager
-   :platform: Unix, Windows
-   :synopsis: Manages all loading and caching of data for wikiparse.
+Manages all loading and caching of data for wikiparse.
+This module is meant primarily for use within wikiparse,
+but can be used from the outside to provide raw data or
+aid in debugging.
    
 .. moduleauthor:: David Maxson <jexmax@gmail.com>
 '''
@@ -53,8 +54,9 @@ def possible_titles(partial_title):
     '''Retrieves all cached pages starting with the specified title text.
     
     :param partial_title: The beginning of a title.
-    :type partial_title: str.
-    :returns: generator of str -- a generator that provides the possible title names matching the specified title beginning
+    :type partial_title: str
+    :returns: A generator that provides the possible title names matching the specified title beginning
+    :rtype: Generator of str
     '''
     cleaned = _clean_title(partial_title).lower()
     dir = os.path.join(root_dir, *_pick_dir(cleaned))
@@ -68,6 +70,8 @@ def _pick_path(title, ext):
     return os.path.join(os.path.join(root_dir, *dirs), "%s.%s" % (cleaned, ext))
 
 def start_recording_index():
+    '''When opening a wikipedia archive, this initializes the writing of the index file (not really used yet)
+    '''
     global index, index_num
     index = open(PAGE_INDEX_RAW, "w", 1000000)
     index.write("{")
@@ -75,6 +79,8 @@ def start_recording_index():
     atexit.register(finish_recording_index)
 
 def finish_recording_index():
+    '''When opening a wikipedia archive, this finalizes the writing of the index file (not really used yet)
+    '''
     global index, index_num
     index.write('-1:["",""]}')
     index.flush()
@@ -90,6 +96,8 @@ def finish_recording_index():
     #zip.open(PAGE_INDEX, 'wb').write(json.dumps({i: index[i] for i in range(len(index))}))
 
 def read_index():
+    '''Reads in the index file as a json object
+    '''
     return json.loads(zip.open(PAGE_INDEX, 'rb').read())
 
 known_good_dirs = set()
@@ -110,9 +118,27 @@ def _write_page(title, page_type, content, overwrite=False):
     zip.open(path, "wb").write(bytes(content, 'UTF-8') if type(content) is not bytes else content)
 
 def write_wikitext(title, content, overwrite=False):
+    '''Writes a wikitext page to its appropriate file
+
+    :param title: The title of the page that is being written
+    :type title: str
+    :param content: The wikitext as a string
+    :type content: str
+    :param overwrite: Whether or not to overwrite the existing file if the file already exists
+    :type overwrite: bool
+    '''
     _write_page(title, WIKITEXT, content, overwrite)
 
 def write_json(title, content, overwrite=False):
+    '''Writes a json page to its appropriate file
+
+    :param title: The title of the page that is being written
+    :type title: str
+    :param content: The json as a string
+    :type content: str
+    :param overwrite: Whether or not to overwrite the existing file if the file already exists
+    :type overwrite: bool
+    '''
     _write_page(title, JSON, content, overwrite)
 
 
@@ -139,7 +165,7 @@ def _fetch_wikitext(title):
     return str(wikitext, 'UTF-8')
 
 gateway = None
-def initialize_wikiparser():
+def _initialize_wikiparser():
     import subprocess, atexit
     from py4j.java_gateway import JavaGateway as java
     global gateway
@@ -155,9 +181,16 @@ def initialize_wikiparser():
 
 def _parse_wikitext_to_json(wikitext):
     _verbose("Converting wikitext to json")
-    return initialize_wikiparser().convertWikitextToJson(wikitext)
+    return _initialize_wikiparser().convertWikitextToJson(wikitext)
 
 def read_wikitext(title):
+    '''Reads the wikitext for the specified page, fetching it directly from wikipedia if no cached version is available
+
+    :param title: The name of the wikipedia page to retrieve wikitext for
+    :type title: str
+    :return: The wikitext
+    :rtype: str
+    '''
     ret = _read_page(title, WIKITEXT)
     if ret is not None:
         return ret
@@ -167,6 +200,13 @@ def read_wikitext(title):
         return None
 
 def read_json(title):
+    '''Reads the json for the specified page, generating it with the parser from the wikitext if no cached version is available
+
+    :param title: The name of the wikipedia page to retrieve json for
+    :type title: str
+    :return: The json text
+    :rtype: str
+    '''
     ret = _read_page(title, JSON)
     if ret is not None:
         return ret
