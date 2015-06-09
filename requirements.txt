@@ -1,2 +1,3 @@
 unidecode
 py4j
+bs4
