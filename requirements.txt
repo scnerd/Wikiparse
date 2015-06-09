@@ -1,0 +1,2 @@
+unidecode
+py4j
