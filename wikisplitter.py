@@ -1,11 +1,77 @@
 #!/usr/bin/env python3
 
+'''
+A runnable script that can efficiently process an entire wikipedia archive
+file and extract the wikitext for every contained page into its own file,
+which can be retrieved quickly through the filemanager module. If downloading
+wikipdeia for offline caching, this is the second step (after downloading) to
+make the downloaded archive usable by the wikiparse library.
+
+Wikisplitter needs to be given the path to the archive file. It is recommended
+that, if you download anything, you download the single large archive of
+Wikipedia rather than the multiple broken archives. The latter has not been
+tested, but the former works correctly.
+
+The ``xml`` (``x``) flag allows you to unzip the archive yourself into just its xml
+file (recommended approach if you didn't download the single large zip file),
+and then this script will skip the unzipping step. By default, the script
+assumes that you are giving it the archive file that's still zipped.
+
+The ``output`` (``o``) variable allows you to specify where the unzipped files
+get unpacked. Unless you absolutely need to, it is recommended that you change
+this directory in the module configuration file instead (config.json, see the
+relevant section below)
+
+The ``update`` (``u``) flag specifies that you are updating the currently
+cached files, which allows wikisplitter to overwrite existing files with
+newly unpacked pages.
+
+The ``no_redirects`` (``r``) flag skips outputting redirection pages. Note
+that redirection pages can already be handled by wikiparse correctly, so unless
+you're trying to save space, reduce the number of files output, or only interested
+in actual content pages, you may want to not use this flag.
+
+The ``verbose`` (``v``) flag outputs file names as well as numerical progress
+indications while unzipping, and also specifies when other major steps are happening
+in the unpacking process.
+
+::
+
+    usage: wikisplitter.py [-h] [-x] [-o OUTPUT] [-u] [-r] [-v] filename
+
+    Expand wikipedia file into page files
+
+    positional arguments:
+      filename              The filepath to the wikipedia dump file
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -x, --xml             Indicates that the specified file is an already-
+                            unzipped xml file (rather than bz2)
+      -o OUTPUT, --output OUTPUT
+                            Changes the output directory
+      -u, --update          Forces overwriting of pages that already exist
+      -r, --no_redirects    Ignores redirection pages
+      -v, --verbose         Prints page titles as they get output
+
+
+.. moduleauthor:: David Maxson <jexmax@gmail.com>
+'''
+
 DB_NAME = "wikipedia.sqlite"
 
 import gzip, argparse, sys
 from xml.etree import ElementTree as ET
 import atexit
 from time import time
+
+# http://stackoverflow.com/questions/279237/import-a-module-from-a-relative-path
+import os, sys, inspect
+# realpath() will make your script run, even if you symlink it :)
+cmd_folder = os.path.realpath(os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0]))
+if cmd_folder not in sys.path:
+    sys.path.insert(0, cmd_folder)
+
 import filemanager
 
 global args

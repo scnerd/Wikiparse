@@ -1,11 +1,55 @@
+'''
+The wikipage module exposes the WikiPage class, which is the primary
+tool for retrieving and analyzing Wikipedia pages. The method simply
+takes a page title and retrieves the page as a WikiPage object
+
+>>> page = WikiPage('Python (programming language)')
+
+The resulting object contains all the textual content of the specified
+page. Note that to follow redirections, it is recommended that you use
+:py:meth:`WikiPage.resolve_page` instead.
+
+WikiPages are structured internally as trees. Each element in the tree
+inherits from :py:class:`PageElement`. The most common type of
+PageElement is a :py:class:`Context`, essentially a loose collection
+of other page elements. Most types derive from Context, adding some
+kind of peripheral information on the side. For example, an
+:py:class:`InternalLink` is a Context whose content is the textual
+element of the link, but with an added attribute ``target`` that
+specifies which Wikipedia page that link points to. This kind of
+separation of the text (e.g., "legislation") from the metadata attached
+to that text (e.g., a link to "List of United States federal legislation")
+allows for a very clean and simple presentation of the plaintext of a
+page without any loss of information.
+
+A wikipage
+
+'''
+
 import re
 import collections
+# http://stackoverflow.com/questions/279237/import-a-module-from-a-relative-path
+import os, sys, inspect
+# realpath() will make your script run, even if you symlink it :)
+cmd_folder = os.path.realpath(os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0]))
+if cmd_folder not in sys.path:
+    sys.path.insert(0, cmd_folder)
+
 import filemanager
 import json
 from collections import OrderedDict as odict
 
 
 class PageElement(object):
+    '''PAGE ELEMENT CLASS
+
+        :param page:
+        :param cur_section:
+        :param parent:
+        :param json_data:
+        :param make_fake:
+    '''
+
     def __init__(self, page, cur_section, parent, json_data, make_fake=False):
         self.section = cur_section
         self.page = page
@@ -230,15 +274,35 @@ class WikiPage(object):
         self.externals = [construct(self, self.no_section, None, el) for el in json_data['external_links']]
         self.sections = [construct(self, self.no_section, None, el) for el in json_data['sections']]
         self.sections = odict([(str(sec.title).strip(), sec) for sec in self.sections])
+
         self.intro = Context._fake("INTRO", [el for el in self.root[0] if type(el) is not Section])
+        self.root_section.body = [el for el in self.all_elements.values() if el.section == self.root_section]
+        self.no_section.body = [el for el in self.all_elements.values() if el.section == self.no_section]
+
+    def redirection(self):
+        if hasattr(self, '_redir'):
+            return self._redir
+
+        if any(type(el) is Redirection for el in self.all_elements.values()):
+            self._redir = next(el for el in self.all_elements.values() if type(el) is Redirection).target
+        else:
+            self._redir = None
+        return self._redir
 
     @staticmethod
     def resolve_page(title, follow_redictions=True):
+        '''Retrieves the specified page, capable of following redirection pages
+
+        :param title:
+        :type title:
+        :param follow_redictions:
+        :type follow_redictions:
+        :return:
+        '''
         page = WikiPage(title)
         if follow_redictions:
-            while any(type(el) is Redirection for el in page.all_elements.values()):
-                redir_to = next(el for el in page.all_elements.values() if type(el) is Redirection)
-                page = WikiPage(redir_to.target)
+            while page.redirection():
+                page = WikiPage(redirection())
         return page
 
     def section_tree(self):

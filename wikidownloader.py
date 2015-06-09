@@ -1,5 +1,114 @@
 #!/usr/bin/env python3
 
+'''
+A runnable script that can guide a user through finding the download links
+for wikipedia archive files. Execute from terminal and follow the directions
+to find the best links for downloading. Note that this script does not
+actually download any files itself, since this process can take long enough
+that a proper download manager is recommended to be used. For use with
+wikiparse, it is recommended to download
+English -> latest -> pages-articles -> single -> xml.bz2
+
+Each menu in the process has the following features:
+- Help documentation to instruct you in that particular menu's use. There
+is help here if you're not sure what the menu options mean.
+- Back, to return to previous menus
+- Case-insensitive command completion, as long as your partial input
+unambiguously refers to a single command, it will be run
+
+If using wikiparse as an offline Wikipedia module, this is your first step
+to obtain the wikitext for all Wikipedia pages. If you don't want to download
+the entire archive, individual pages can be obtained on demand, but this may
+be much slower for large numbers of pages.
+
+This script has no command-line options.
+
+Below shows a sample run of this script:
+
+::
+
+    Language selection
+      English
+      Catalan
+      Chinese
+      French
+      German
+      Italian
+      Japanese
+      Polish
+      Portugese
+      Russian
+      Spanish
+      Other
+      BACK
+    > eng
+    Date selection
+      latest
+      20150602
+      20150515
+      20150403
+      20150304
+      20150205
+      20150204
+      20150112
+      20141208
+      20141106
+      BACK
+    > latest
+    Type selection (use 'pages-articles' for wikiparse toolchain)
+      abstract
+      all-titles-in-ns
+      all-titles
+      category
+      categorylinks
+      externallinks
+      flaggedpages
+      flaggedrevs
+      geo_tags
+      image
+      imagelinks
+      interwiki
+      iwlinks
+      langlinks
+      md5sums
+      page
+      page_props
+      page_restrictions
+      pagelinks
+      pages-articles-multistream-index
+      pages-articles-multistream
+      pages-articles
+      pages-logging
+      pages-meta-current
+      pages-meta-history
+      protected_titles
+      redirect
+      site_stats
+      stub-articles
+      stub-meta-current
+      stub-meta-history
+      templatelinks
+      user_groups
+      HELP
+      BACK
+    > pages-articles
+    File selection
+      Single file
+      Multiple files
+      BACK
+    > single
+    Extension selection
+      xml.bz2
+      xml.bz2-rss.xml
+      BACK
+    > xml.bz2
+    Download the following links:
+    https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-pages-articles.xml.bz2
+
+
+.. moduleauthor:: David Maxson <jexmax@gmail.com>
+'''
+
 from collections import OrderedDict
 import urllib.request
 from bs4 import BeautifulSoup as BS
@@ -205,6 +314,8 @@ class ExtensionMenu(Menu):
             return Menu.QUIT
         return inner
 
+def run():
+    LanguageMenu()()
 
 if __name__ == "__main__":
-    LanguageMenu()()
+    run()
