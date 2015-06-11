@@ -20,76 +20,93 @@ WikiPage
 .. autoclass:: wikiparse.wikipage.WikiPage
    :members:
 
+WikiPage Elements
+-----------------
+
+The following types are available directly from the :py:mod:`wikiparse.wikipage` module, but are all the possible
+types of nodes that can exist inside WikiPage trees.
+
 PageElement
---------------
+++++++++++++++
 
 .. autoclass:: wikiparse.wikipage.PageElement
    :members:
 
 Context
---------------
+++++++++++++++
 
 .. autoclass:: wikiparse.wikipage.Context
+   :show-inheritance:
    :members:
 
 Text
---------------
+++++++++++++++
 
 .. autoclass:: wikiparse.wikipage.Text
+   :show-inheritance:
    :members:
 
 Link
---------------
+++++++++++++++
 
 .. autoclass:: wikiparse.wikipage.Link
+   :show-inheritance:
    :members:
 
 InternalLink
---------------
+++++++++++++++
 
 .. autoclass:: wikiparse.wikipage.InternalLink
+   :show-inheritance:
    :members:
 
 ExternalLink
---------------
+++++++++++++++
 
 .. autoclass:: wikiparse.wikipage.ExternalLink
+   :show-inheritance:
    :members:
 
 Heading
---------------
+++++++++++++++
 
 .. autoclass:: wikiparse.wikipage.Heading
+   :show-inheritance:
    :members:
 
 Section
---------------
+++++++++++++++
 
 .. autoclass:: wikiparse.wikipage.Section
+   :show-inheritance:
    :members:
 
 Image
---------------
+++++++++++++++
 
 .. autoclass:: wikiparse.wikipage.Image
+   :show-inheritance:
    :members:
 
 Template
---------------
+++++++++++++++
 
 .. autoclass:: wikiparse.wikipage.Template
+   :show-inheritance:
    :members:
 
 TemplateArg
---------------
+++++++++++++++
 
 .. autoclass:: wikiparse.wikipage.TemplateArg
+   :show-inheritance:
    :members:
 
 Redirection
---------------
+++++++++++++++
 
 .. autoclass:: wikiparse.wikipage.Redirection
+   :show-inheritance:
    :members:
 
 RichText

@@ -3,7 +3,7 @@ The wikipage module exposes the WikiPage class, which is the primary
 tool for retrieving and analyzing Wikipedia pages. The method simply
 takes a page title and retrieves the page as a WikiPage object
 
->>> page = WikiPage('Python (programming language)')
+>>> page = wikipage.WikiPage('Python (programming language)')
 
 The resulting object contains all the textual content of the specified
 page. Note that to follow redirections, it is recommended that you use
@@ -14,7 +14,7 @@ inherits from :py:class:`PageElement`. The most common type of
 PageElement is a :py:class:`Context`, essentially a loose collection
 of other page elements. Most types derive from Context, adding some
 kind of peripheral information on the side. For example, an
-:py:class:`InternalLink` is a Context whose content is the textual
+:py:class:`InternalLink` is a :py:class:`Context` whose content is the textual
 element of the link, but with an added attribute ``target`` that
 specifies which Wikipedia page that link points to. This kind of
 separation of the text (e.g., "legislation") from the metadata attached
@@ -421,8 +421,11 @@ def construct(page, cur_section, parent, json_data):  # introduce current sectio
 #
 
 class RichText(object):
-    """
-    
+    """ A flattened representation of the text belonging to a node in a :py:class:`WikiPage` tree. Generate using
+    ``my_page_element.get_text()`` on any :py:class:`PageElement` in your page. Converting this object to a string
+    (using :py:meth:`str`) returns a raw text form, or you can index this object directly using the exact same
+    indexing as you would on the raw string. Each value returned from indexing this object returns a tuple of the
+    requested character in the string paired with the object from which that character's text came.
     """
 
     def __init__(self, element):
@@ -444,7 +447,7 @@ class RichText(object):
 
     @property
     def groups(self):
-        """ 
+        """ The list of strings and their associated objects from which this object is indexed.
         """
         return self._flat
 
