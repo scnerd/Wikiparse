@@ -1,5 +1,4 @@
 {
-    "db_directory": "./wikipedia",
     "try_pulls": true,
     "cache_pulls": true,
     "cache_dir": "../wikipedia",

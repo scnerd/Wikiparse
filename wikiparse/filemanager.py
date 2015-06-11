@@ -141,6 +141,16 @@ def write_json(title, content, overwrite=False):
     '''
     _write_page(title, JSON, content, overwrite)
 
+def reset_page(title):
+    '''Deletes any cached versions of the specified page so it can be updated when next requested
+
+    :param title: The title of the page to delete
+    '''
+    for file_type in [WIKITEXT, JSON]:
+        path = _pick_path(title, file_type)
+        if os.path.exists(path):
+            os.remove(path)
+
 
 def _read_page(title, type):
     path = _pick_path(title, type)

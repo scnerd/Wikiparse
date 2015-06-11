@@ -17,11 +17,6 @@ file (recommended approach if you didn't download the single large zip file),
 and then this script will skip the unzipping step. By default, the script
 assumes that you are giving it the archive file that's still zipped.
 
-The ``output`` (``o``) variable allows you to specify where the unzipped files
-get unpacked. Unless you absolutely need to, it is recommended that you change
-this directory in the module configuration file instead (config.json, see the
-relevant section below)
-
 The ``update`` (``u``) flag specifies that you are updating the currently
 cached files, which allows wikisplitter to overwrite existing files with
 newly unpacked pages.
@@ -37,7 +32,7 @@ in the unpacking process.
 
 ::
 
-    usage: wikisplitter.py [-h] [-x] [-o OUTPUT] [-u] [-r] [-v] filename
+    usage: wikisplitter.py [-h] [-x] [-u] [-r] [-v] filename
 
     Expand wikipedia file into page files
 
@@ -48,8 +43,6 @@ in the unpacking process.
       -h, --help            show this help message and exit
       -x, --xml             Indicates that the specified file is an already-
                             unzipped xml file (rather than bz2)
-      -o OUTPUT, --output OUTPUT
-                            Changes the output directory
       -u, --update          Forces overwriting of pages that already exist
       -r, --no_redirects    Ignores redirection pages
       -v, --verbose         Prints page titles as they get output
@@ -57,10 +50,11 @@ in the unpacking process.
 
 .. moduleauthor:: David Maxson <jexmax@gmail.com>
 '''
+from wikiparse import filemanager
 
 DB_NAME = "wikipedia.sqlite"
 
-import gzip, argparse, sys
+import gzip, argparse
 from xml.etree import ElementTree as ET
 import atexit
 from time import time
@@ -71,8 +65,6 @@ import os, sys, inspect
 cmd_folder = os.path.realpath(os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0]))
 if cmd_folder not in sys.path:
     sys.path.insert(0, cmd_folder)
-
-import filemanager
 
 global args
 
@@ -170,7 +162,7 @@ if __name__ == '__main__':
     def_config = json.load(open("config.json"))
     parser = argparse.ArgumentParser(description='Expand wikipedia file into page files')
     parser.add_argument('-x', '--xml', help="Indicates that the specified file is an already-unzipped xml file (rather than bz2)", action="store_true", default=False)
-    parser.add_argument('-o', '--output', help="Changes the output directory", default=def_config['db_directory'])
+    #parser.add_argument('-o', '--output', help="Changes the output directory", default=def_config['cache_dir'])
     parser.add_argument('-u', '--update', help="Forces overwriting of pages that already exist", action="store_true", default=False)
     parser.add_argument('-r', '--no_redirects', help="Ignores redirection pages", action="store_true", default=False)
     #parser.add_argument('-n', '--no_ns', help="Removes the namespace from the xml attribute tags before exporting", default=True, type=bool)
