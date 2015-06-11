@@ -116,7 +116,9 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 import os
-if not os.environ.get('READTHEDOCS', None):
+if os.environ.get('READTHEDOCS', None):
+    html_theme = 'default'
+else:
     html_theme = 'classic'
 
 # Theme options are theme-specific and customize the look and feel of a theme
