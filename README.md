@@ -12,7 +12,9 @@ For complete documentation, see: http://wikiparse.readthedocs.org/
 
 For the paper behind this project, see report/Report.pdf (coming soon)
 
-= Dependencies =
+============
+Dependencies
+============
 
 * Python 3
 
@@ -22,6 +24,8 @@ For the paper behind this project, see report/Report.pdf (coming soon)
 
 * Java
 
-= Installation =
+============
+Installation
+============
 
 A standard Python setup script is included. This should fully install the module using "python3 setup.py install".
