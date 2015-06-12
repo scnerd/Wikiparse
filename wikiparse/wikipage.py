@@ -152,7 +152,7 @@ class Context(PageElement):  # Make iterable
         return self.__content
 
 
-Prop = collections.namedtuple('Prop', ['id', 'type'])
+Prop = collections.namedtuple('Prop', ['id', 'name'])
 
 
 class Text(PageElement):
@@ -178,7 +178,54 @@ class Text(PageElement):
 
     @property
     def properties(self):
-        """ The properties of this text, contained as tuples.
+        """ The list of properties of this text, contained as tuples like (id, 'name'). These are named tuples, so data
+        can also be pulled out of them using "properties[*n*].id" and "properties[*n*].name".
+        The following properties are possible:
+
+        * Basic formatting
+
+            - ``bold`` - Bolded text.
+            - ``italics`` - Italicized text.
+            - ``link`` - The title of a link.
+
+        * Definition lists
+
+            - ``defList`` - A definition list.
+            - ``term`` - The term being defined in a definition list.
+            - ``def`` - The definition of a term in a definition list.
+
+        * Enumerations
+
+            - ``enum`` - An enumeration list.
+            - ``enumItem`` - An item in an enumeration list.
+
+        * Itemized lists
+
+            - ``items`` - An itemized list.
+            - ``itemsItem`` - An item in an itemized list.
+
+        * Tables
+
+            - ``table`` - Text within a table.
+            - ``tableCaption`` - The caption of a table.
+            - ``tableCell`` - The body of a table cell.
+            - ``tableHeader`` - The header of a table.
+            - ``tableRow`` - A row of a table.
+
+        * XML (uncommon and poorly parsed, these probably shouldn't be showing up very often)
+
+            - ``xml`` - And XML element.
+            - ``xmlClose`` - The close of an XML element.
+            - ``xmlEmpty`` - An XML element with no content.
+            - ``xmlOpen`` - The open of an XML element.
+            - ``xmlEntRef`` - A tag surrounding external references. *These shouldn't survive, please report with
+              wikitext if you encounter one of these*
+            - ``xmlCharRef`` - A tag surrounding character references. *These shouldn't survive, please report with
+              wikitext if you encounter one of these*
+
+        * Templates
+
+            - ``tempParameter`` - A parameter to a template.
         """
         return self.__properties
 
