@@ -9,4 +9,19 @@ door for using Wikipedia in new ways more easily to further research into Natura
 Wikipedia as a broad, open-source, and up-to-date corpus.
 
 For complete documentation, see: http://wikiparse.readthedocs.org/
+
 For the paper behind this project, see report/Report.pdf (coming soon)
+
+= Dependencies =
+
+* Python 3
+
+    - unidecode
+    - py4j
+    - beautifulsoup4
+
+* Java
+
+= Installation =
+
+A standard Python setup script is included. This should fully install the module using "python3 setup.py install".

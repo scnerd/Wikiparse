@@ -1,7 +1,0 @@
-Dependencies:
-    python modules:
-        unidecode
-        py4j
-        bs4
-        gzip (standard?)
-    antlr4
