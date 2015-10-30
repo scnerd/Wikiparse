@@ -113,6 +113,9 @@ from collections import OrderedDict
 import urllib.request
 from bs4 import BeautifulSoup as BS
 import re
+import argparse
+
+global user_args
 
 DL_BASE = r"https://dumps.wikimedia.org"
 DL_LANG = r""
@@ -142,19 +145,24 @@ class Menu(object):
     QUIT = 1
     LOOP = 2
 
-    def __init__(self, title, items):
+    def __init__(self, title, items, default):
         self.title = title
         self._options = items
         self._options['BACK'] = lambda: True
+        self.default = default
 
     def __call__(self, *args, **kwargs):
         return self.handle_loop()
 
     def handle_loop(self):
         while True:
-            print(self.title)
-            print("\n".join("  %s" % key for key, val in self._options.items()))
-            selection = input("> ")
+            if len(self.default.strip()) > 0:
+                selection = self.default
+                self.default = ""
+            else:
+                print(self.title)
+                print("\n".join("  %s" % key for key, val in self._options.items()))
+                selection = input("> ")
             possibilities = [(k, v) for k, v in self._options.items() if k.lower() == selection.lower()]
             if len(possibilities) == 0:
                 possibilities = [(k, v) for k, v in self._options.items() if k.lower().startswith(selection.lower())]
@@ -189,7 +197,7 @@ class LanguageMenu(Menu):
     def __init__(self):
         langs = OrderedDict([(title, self.pick_language(code)) for title, code in languages])
         langs['Other'] = self.custom_language
-        super(LanguageMenu, self).__init__("Language selection", langs)
+        super(LanguageMenu, self).__init__("Language selection", langs, user_args.l)
 
     def pick_language(self, lang_prefix):
         def inner():
@@ -207,11 +215,11 @@ class DateMenu(Menu):
     def __init__(self):
         cur_url = DL_ROOT_URL()
         html = urllib.request.urlopen(cur_url).read()
-        soup = BS(html)
+        soup = BS(html, 'html5lib')
         links = soup.pre.find_all('a')
         link_names = [res for res in reversed([lnk['href'].partition("/")[0] for lnk in links]) if res != ".."]
         choices = OrderedDict([(name, self.pick_date(name)) for name in link_names])
-        super(DateMenu, self).__init__("Date selection", choices)
+        super(DateMenu, self).__init__("Date selection", choices, user_args.d)
 
     def pick_date(self, date):
         def inner():
@@ -233,7 +241,7 @@ class TypeMenu(Menu):
         global AVAIL_LINKS
         cur_url = DL_ROOT_URL()
         html = urllib.request.urlopen(cur_url).read()
-        soup = BS(html)
+        soup = BS(html, 'html5lib')
         if DL_DATE == "latest":
             links = [res for res in (a['href'] for a in soup.find_all('a')) if res != ".."]
         else:
@@ -246,7 +254,7 @@ class TypeMenu(Menu):
         types = OrderedDict([(lnk, self.pick_type(lnk)) for lnk in printable_links])
         types["HELP"] = self.help
 
-        super(TypeMenu, self).__init__("Type selection (use 'pages-articles' for wikiparse toolchain)", types)
+        super(TypeMenu, self).__init__("Type selection (use 'pages-articles' for wikiparse toolchain)", types, user_args.t)
 
     def pick_type(self, type):
         def inner():
@@ -275,7 +283,7 @@ class FileMenu(Menu):
         if len(self.multi_links) > 0:
             choices.append(("Multiple files", self.dl_multi))
 
-        super(FileMenu, self).__init__("File selection", OrderedDict(choices))
+        super(FileMenu, self).__init__("File selection", OrderedDict(choices), user_args.n)
         
     def dl_single(self):
         global POTENTIAL_LINKS, SKIP_NUMS
@@ -300,7 +308,7 @@ class ExtensionMenu(Menu):
         exts = [".".join(lst) for lst in exts]
         exts = list(unique(exts))
 
-        super(ExtensionMenu, self).__init__("Extension selection", OrderedDict([(inner_ext, self.pick_ext(SKIP_NUMS, inner_ext)) for inner_ext in exts]))
+        super(ExtensionMenu, self).__init__("Extension selection", OrderedDict([(inner_ext, self.pick_ext(SKIP_NUMS, inner_ext)) for inner_ext in exts]), user_args.x)
 
     def pick_ext(self, skip_nums, ext):
         def inner():
@@ -309,7 +317,8 @@ class ExtensionMenu(Menu):
             exts = ["".join("%s%s" % (("\\" if not c.isalnum() else ""), c) for c in inner_ext) if inner_ext.lower() != ExtensionMenu.partial_flag.lower() else ExtensionMenu.partial_find for inner_ext in exts]
             regex = DL_FILE_PREFIX() + DL_TYPE + ("\d+" if skip_nums else "") + "".join(r"\.%s" % inner_ext for inner_ext in exts) + "$"
             matched_files = [lnk for lnk in POTENTIAL_LINKS if re.match(regex, lnk) is not None]
-            print("Download the following links:")
+            if not user_args.s:
+                print("Download the following links:")
             print("\n".join("%s/%s" % (DL_ROOT_URL(), mtch) for mtch in matched_files))
             return Menu.QUIT
         return inner
@@ -318,4 +327,12 @@ def run():
     LanguageMenu()()
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Find wikipedia archive files to download')
+    parser.add_argument('-l', help="Sets the default language to use (English)", default="", type=str)
+    parser.add_argument('-d', help="Sets the default date to use (latest)", default="", type=str)
+    parser.add_argument('-t', help="Sets the default file type to download (pages-articles)", default="", type=str)
+    parser.add_argument('-x', help="Sets the default extension to use (xml.bz2)", default="", type=str)
+    parser.add_argument('-n', help="Sets the default multiplicity to use (single)", default="", type=str)
+    parser.add_argument('-s', help="Suppresses unnecessary output (for use in scripts primarily)", action="store_true")
+    user_args = parser.parse_args()
     run()

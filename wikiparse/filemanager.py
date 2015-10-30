@@ -8,7 +8,7 @@ aid in debugging.
 '''
 
 global WIKITEXT, JSON
-global PAGE_INDEX, REVISION_INDEX
+#global PAGE_INDEX, REVISION_INDEX
 
 import gzip as zip
 import os, json, re, atexit
@@ -21,16 +21,16 @@ WIKIPARSE_DIR = os.path.dirname(__file__)
 
 config = json.load(open(os.path.join(WIKIPARSE_DIR, "config.json")))
 root_dir = os.path.join(WIKIPARSE_DIR, config['cache_dir'])
-PAGE_INDEX = os.path.join(root_dir, config['page_index'])
-PAGE_INDEX_RAW = PAGE_INDEX.rpartition(".")[0] + ".json"
+#PAGE_INDEX = os.path.join(root_dir, config['page_index'])
+#PAGE_INDEX_RAW = PAGE_INDEX.rpartition(".")[0] + ".json"
 #REVISION_INDEX = config['revision_index']
 disallowed_filenames = config['disallowed_file_names']
 
 dir_nesting = config['dir_nesting']
 
 global index, index_num
-index_num = None
-index = None
+#index_num = None
+#index = None
 
 if config['verbose_filemanager']:
     def _verbose(txt):
@@ -72,42 +72,45 @@ def _pick_path(title, ext):
 def start_recording_index():
     '''When opening a wikipedia archive, this initializes the writing of the index file (not really used yet)
     '''
-    global index, index_num
-    index = open(PAGE_INDEX_RAW, "w", 1000000)
-    index.write("{")
-    index_num = 1
-    atexit.register(finish_recording_index)
+    #global index, index_num
+    #index = open(PAGE_INDEX_RAW, "w", 1000000)
+    #index.write("{")
+    #index_num = 1
+    #atexit.register(finish_recording_index)
+    pass
 
 def finish_recording_index():
     '''When opening a wikipedia archive, this finalizes the writing of the index file (not really used yet)
     '''
-    global index, index_num
-    index.write('-1:["",""]}')
-    index.flush()
-    index.close()
-    with open(PAGE_INDEX_RAW, 'rb') as raw:
-        with zip.open(PAGE_INDEX, 'wb') as zipper:
-            while True:
-                data = raw.read(1000000)
-                if not data:
-                    break
-                zipper.write(data)
-    os.remove(PAGE_INDEX_RAW)
+    #global index, index_num
+    #index.write('-1:["",""]}')
+    #index.flush()
+    #index.close()
+    #with open(PAGE_INDEX_RAW, 'rb') as raw:
+    #    with zip.open(PAGE_INDEX, 'wb') as zipper:
+    #        while True:
+    #            data = raw.read(1000000)
+    #            if not data:
+    #                break
+    #            zipper.write(data)
+    #os.remove(PAGE_INDEX_RAW)
     #zip.open(PAGE_INDEX, 'wb').write(json.dumps({i: index[i] for i in range(len(index))}))
+    pass
 
 def read_index():
     '''Reads in the index file as a json object
     '''
-    return json.loads(zip.open(PAGE_INDEX, 'rb').read())
+    #return json.loads(zip.open(PAGE_INDEX, 'rb').read())
+    pass
 
 known_good_dirs = set()
 def _write_page(title, page_type, content, overwrite=False):
-    global known_good_dirs, index, index_num
+    global known_good_dirs #, index, index_num
     path = _pick_path(title, page_type)
     _verbose("Writing to %s" % path)
-    if index is not None:
-        index.write('%d:["%s","%s"],' % (index_num, title, path))
-        index_num += 1
+    #if index is not None:
+    #    index.write('%d:["%s","%s"],' % (index_num, title, path))
+    #    index_num += 1
     if not overwrite and os.path.exists(path):
         _verbose("File already exists, aborting write")
         return

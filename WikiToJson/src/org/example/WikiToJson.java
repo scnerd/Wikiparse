@@ -37,6 +37,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.GsonBuilder;
 
 import py4j.GatewayServer;
+import py4j.Py4JNetworkException;
 
 @SuppressWarnings("deprecation")
 public class WikiToJson extends Visitor {
@@ -725,7 +726,7 @@ public class WikiToJson extends Visitor {
 		System.out.println("Done, output saved to " + f.getAbsolutePath());
 	}
 	*/
-	static GatewayServer gateway;
+	static GatewayServer gateway = null;
 	public class ParseTools {
 
 		public String convertWikitextToJson(String wikitext)
@@ -777,7 +778,17 @@ public class WikiToJson extends Visitor {
 	}
 	
 	public static void main(String[] args) {
-		gateway = new GatewayServer(new WikiToJson().new ParseTools());
+		int port = 25333;
+		int plus = 0;
+		while(gateway == null)
+			try {
+				gateway = new GatewayServer(new WikiToJson().new ParseTools(), port + plus);
+			} catch (Py4JNetworkException ex) {
+				if(plus < 1000)
+					plus++;
+				else
+					throw ex;
+			}
 		gateway.start();
 		System.out.println("Gateway launched");
 		System.out.flush();

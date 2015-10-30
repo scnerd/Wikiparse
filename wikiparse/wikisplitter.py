@@ -88,9 +88,19 @@ def split_xml(xml_stream):
 
 
     verbose("Extracting pages into individual files...")
-    for title, page in find_pages(xml_stream):
+    if not args.verbose:
+        try:
+            from tqdm import tqdm
+            all_pages = tqdm(find_pages(xml_stream))
+            has_progress_bar = True
+        except ImportError:
+            all_pages = find_pages(xml_stream)
+            has_progress_bar = False
+    else:
+        all_pages = find_pages(xml_stream)
+    for title, page in all_pages:
         num += 1
-        if time() - prev_time >= .1:
+        if (args.verbose or not has_progress_bar) and (time() - prev_time >= 0.1):
             prev_time = time()
             if args.verbose:
                 sys.stdout.write("%d - % -79s\r" % (num, title[:79]))
@@ -100,7 +110,7 @@ def split_xml(xml_stream):
                 sys.stdout.flush()
         output_page(title, page)
     verbose("\nWriting index...")
-    filemanager.finish_recording_index()
+    #filemanager.finish_recording_index()
     verbose("Done")
 
 
@@ -154,7 +164,11 @@ def find_pages(xml_stream):
     del context
 
 def split_bz2(filename):
-    split_xml(gzip.BZ2File(filename, 'r'))
+    if filename.endswith('.bz2'):
+        import bz2 as unzip
+    else:
+        import gzip as unzip
+    split_xml(unzip.open(filename, 'r'))
 
 if __name__ == '__main__':
     global args
