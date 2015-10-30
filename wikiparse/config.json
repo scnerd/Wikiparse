@@ -1,7 +1,7 @@
 {
     "try_pulls": true,
     "cache_pulls": true,
-    "cache_dir": "/home/dmaxson/wikipedia",
+    "cache_dir": "./wikipedia",
     "page_index": "pages.zip",
     "dir_nesting": 3,
     "fetch_url": "http://en.wikipedia.org/w/index.php?%s",
