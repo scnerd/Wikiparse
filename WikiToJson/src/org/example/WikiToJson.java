@@ -4,8 +4,10 @@ package org.example;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+
 import org.sweble.wikitext.lazy.parser.*;
 import org.sweble.wikitext.lazy.preprocessor.*;
+import org.sweble.wikitext.lazy.postprocessor.*;
 import org.sweble.wikitext.lazy.utils.XmlAttribute;
 import org.sweble.wikitext.lazy.utils.XmlAttributeGarbage;
 import org.sweble.wikitext.lazy.utils.XmlCharRef;
@@ -22,6 +24,8 @@ import org.sweble.wikitext.lazy.LinkTargetException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Stack;
+
+import javax.xml.bind.JAXBException;
 
 import de.fau.cs.osr.ptk.common.VisitingException;
 import de.fau.cs.osr.ptk.common.Visitor;
@@ -732,7 +736,13 @@ public class WikiToJson extends Visitor {
 		public String convertWikitextToJson(String wikitext)
 				throws LinkTargetException, CompilerException,
 				FileNotFoundException, IOException {
-			return new GsonBuilder().create().toJson(run(wikitext).toJson());
+			try {
+				return new GsonBuilder().create().toJson(run(wikitext).toJson());
+			} catch (JAXBException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return null;
 		}
 
 		public String cleanedWikitext(String wikitext) {
@@ -740,7 +750,7 @@ public class WikiToJson extends Visitor {
 		}
 
 		public WikiPage run(String wikitext) throws LinkTargetException,
-				CompilerException, FileNotFoundException, IOException {
+				CompilerException, FileNotFoundException, IOException, JAXBException {
 			// Set-up a simple wiki configuration
 			SimpleWikiConfiguration config = new SimpleWikiConfiguration(
 					"classpath:/org/sweble/wikitext/engine/SimpleWikiConfiguration.xml");
