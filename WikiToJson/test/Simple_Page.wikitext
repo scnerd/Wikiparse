@@ -1,8 +1,8 @@
-In the [[metric system]], a '''microgram''' ('''µg'''; in the U.S. recommended when communicating medical information: '''mcg''') is a [[Physical unit|unit]] of [[mass]] equal to one billionth ({{val|1|e=-9}}) of a [[kilogram]], one millionth ({{val|1|e=-6}}) of a [[gram]], or one thousandth ({{val|1|e=-3}}) of a milligram. The unit symbol is '''µg''' according to the [[International System of Units]]. In µg the prefix symbol for [[micro-]] is the Greek letter [[Mu (letter)|µ (Mu)]].
+In the [[metric system]], a '''microgram''' ('''Âµg'''; in the U.S. recommended when communicating medical information: '''mcg''') is a [[Physical unit|unit]] of [[mass]] equal to one billionth ({{val|1|e=-9}}) of a [[kilogram]], one millionth ({{val|1|e=-6}}) of a [[gram]], or one thousandth ({{val|1|e=-3}}) of a milligram. The unit symbol is '''Âµg''' according to the [[International System of Units]]. In Âµg the prefix symbol for [[micro-]] is the Greek letter [[Mu (letter)|Âµ (Mu)]].
 
-When the Greek lowercase “µ” (Mu) in the symbol µg is typographically unavailable, it is occasionally—although not properly—replaced by the Latin lowercase “u”.
+When the Greek &ndash; lowercase â€œÂµâ€� (Mu) in the symbol Âµg is typographically unavailable, it is occasionallyâ€”although not properlyâ€”replaced by the Latin lowercase â€œuâ€�.
 
-The United States-based Institute for Safe Medication Practices (ISMP) and the U.S. [[Food and Drug Administration]] (FDA) recommend that the symbol µg should not be used when communicating medical information due to the risk that the prefix [[micro-|µ (micro-)]] might be misread as the prefix [[milli-|m (milli-)]], resulting in a thousandfold overdose. The non-[[International System of Units|SI]] symbol '''mcg''' is recommended instead.<ref>{{cite web
+The United States-based Institute for Safe Medication Practices (ISMP) and the U.S. [[Food and Drug Administration]] (FDA) recommend that the symbol Âµg should not be used when communicating medical information due to the risk that the prefix [[micro-|Âµ (micro-)]] might be misread as the prefix [[milli-|m (milli-)]], resulting in a thousandfold overdose. The non-[[International System of Units|SI]] symbol '''mcg''' is recommended instead.<ref>{{cite web
 |url=http://www.ismp.org/tools/errorproneabbreviations.pdf
 |title=ISMP's List of Error-Prone Abbreviations, Symbols, and Dose Designations
 |accessdate=2011-11-02
@@ -12,9 +12,9 @@ The United States-based Institute for Safe Medication Practices (ISMP) and the U
 |accessdate=2013-12-27
 |publisher=ISMP}}</ref> 
 
-However, the abbreviation mcg is also the symbol for an obsolete [[CGS]] unit of measure known as millicentigram, which is equal to 10 µg.
+However, the abbreviation mcg is also the symbol for an obsolete [[CGS]] unit of measure known as millicentigram, which is equal to 10 Âµg.
 
-Gamma (symbol: [[γ]]) is a non-[[International System of Units|SI]] unit of [[mass]] equal to one microgram. This always-rare use is deprecated.
+Gamma (symbol: [[Î³]]) is a non-[[International System of Units|SI]] unit of [[mass]] equal to one microgram. This always-rare use is deprecated.
 
 ==See also==
 *[[Metric_prefix#List_of_SI_prefixes|List of SI prefixes]]
