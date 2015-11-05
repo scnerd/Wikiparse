@@ -51,7 +51,7 @@ else:
     def _verbose(txt):
         pass
 
-def possible_titles(partial_title):
+def possible_titles(partial_title=None, max_edit_distance=-1):
     '''Retrieves all cached pages starting with the specified title text.
     
     :param partial_title: The beginning of a title.
@@ -59,8 +59,14 @@ def possible_titles(partial_title):
     :returns: A generator that provides the possible title names matching the specified title beginning
     :rtype: Generator of str
     '''
-    partial_title = bytes(partial_title, text_encoding)
-    return (title for title in page_archive.namelist() if title.startswith(partial_title))
+    if partial_title is not None:
+        if max_edit_distance >= 0:
+            from editdistance import eval as distance
+            return (title for title in page_archive.namelist() if distance(title.lower().rpartition('.')[0], partial_title.lower()) <= max_edit_distance)
+        else:
+            return (title for title in page_archive.namelist() if title.startswith(partial_title))
+    else:
+        return page_archive.namelist()
 
 def _pick_path(title, ext):
     return bytes(("%s.%s" % (title, ext)), text_encoding)
@@ -70,11 +76,16 @@ def _write_page(title, page_type, content, overwrite=False):
         open_archive('a')
     path = _pick_path(title, page_type)
     _verbose("Writing to %s" % path)
-    if not overwrite and path in page_archive.namelist():
+    if not overwrite and path.decode(text_encoding) in page_archive.namelist():
         _verbose("Failed to write %s, file already exists (enable overwriting to dismiss this)" % title)
         return
     content = bytes(content, text_encoding) if type(content) is not bytes else content
-    page_archive.writestr(path, content)
+    try:
+        info = page_archive.getinfo(path)
+        page_archive.writestr(info, content) # Overwrites file
+    except KeyError:
+        page_archive.writestr(path, content) # Writes new file
+        
 
 def write_wikitext(title, content, overwrite=False):
     '''Writes a wikitext page to its appropriate file
