@@ -80,7 +80,6 @@ def split_xml(xml_stream):
     num = 0
     prev_time = 0
 
-    filemanager.start_recording_index()
     def output_page(ttl, cnt):
         try:
             filemanager.write_wikitext(ttl, cnt, overwrite=args.update)
@@ -110,7 +109,7 @@ def split_xml(xml_stream):
                 sys.stdout.write("%d\r" % num)
                 sys.stdout.flush()
         output_page(title, page)
-    verbose("\nWriting index...")
+    #verbose("\nWriting index...")
     #filemanager.finish_recording_index()
     verbose("Done")
 
