@@ -51,6 +51,7 @@ in the unpacking process.
 .. moduleauthor:: David Maxson <jexmax@gmail.com>
 '''
 from wikiparse import filemanager
+filemanager.enable_writing()
 
 DB_NAME = "wikipedia.sqlite"
 

@@ -529,28 +529,36 @@ class WikiPage(object):
     :type title: str
     """
 
-    def __init__(self, title):
-        json_data = json.loads(filemanager.read_json(title))
-        if json_data is None:
-            raise LookupError("The requested page '%s' was not found" % str(title))
-        self._title = title
-
-        self._root_section = Section._fake("__ROOT")
-        self._no_section = Section._fake("__NONE")
-
-        self._all_elements = {}
-        self._root = construct(self, self._root_section, None, json_data['root'])
-        self._content = self._root[0]
-        self._templates = self._root[1:]
-        self._refs = construct(self, self._no_section, None, json_data['refs'])
-        self._internals = [construct(self, self._no_section, None, el) for el in json_data['internal_links']]
-        self._externals = [construct(self, self._no_section, None, el) for el in json_data['external_links']]
-        self._sections = [construct(self, self._no_section, None, el) for el in json_data['sections']]
-        self._sections = Odict([(str(sec.title).strip(), sec) for sec in self._sections])
-
-        self._intro = Context._fake("INTRO", [el for el in self._content if type(el) is not Section])
-        self._root_section._body = [el for el in self.all_elements.values() if el.section == self._root_section]
-        self._no_section._body = [el for el in self.all_elements.values() if el.section == self._no_section]
+    def __init__(self, title, follow_redirections=True):
+        if follow_redirections:
+            actual = WikiPage.resolve_page(title, True)
+            for attr in ['title', 'root_section', 'no_section', 'all_elements', 'root',
+                         'content', 'templates', 'refs', 'internals', 'externals',
+                         'sections', 'intro']:
+                attr = "_%s" % attr
+                setattr(self, attr, getattr(actual, attr))
+        else:            
+           json_data = json.loads(filemanager.read_json(title))
+           if json_data is None:
+               raise LookupError("The requested page '%s' was not found" % str(title))
+           self._title = title
+   
+           self._root_section = Section._fake("__ROOT")
+           self._no_section = Section._fake("__NONE")
+   
+           self._all_elements = {}
+           self._root = construct(self, self._root_section, None, json_data['root'])
+           self._content = self._root[0]
+           self._templates = self._root[1:]
+           self._refs = construct(self, self._no_section, None, json_data['refs'])
+           self._internals = [construct(self, self._no_section, None, el) for el in json_data['internal_links']]
+           self._externals = [construct(self, self._no_section, None, el) for el in json_data['external_links']]
+           self._sections = [construct(self, self._no_section, None, el) for el in json_data['sections']]
+           self._sections = Odict([(str(sec.title).strip(), sec) for sec in self._sections])
+   
+           self._intro = Context._fake("INTRO", [el for el in self._content if type(el) is not Section])
+           self._root_section._body = [el for el in self.all_elements.values() if el.section == self._root_section]
+           self._no_section._body = [el for el in self.all_elements.values() if el.section == self._no_section]
 
     @property
     def redirection(self):
@@ -564,7 +572,7 @@ class WikiPage(object):
         return self._redir
 
     @staticmethod
-    def resolve_page(title, follow_redictions=True):
+    def resolve_page(title, follow_redirections=True):
         """ Retrieves the specified page, capable of following redirection pages.
 
         :param title: The title of the page to construct
@@ -572,10 +580,10 @@ class WikiPage(object):
         :param follow_redictions: Whether or not to follow redirection pages automatically
         :type follow_redictions: bool
         """
-        page = WikiPage(title)
-        if follow_redictions:
+        page = WikiPage(title, follow_redirections=False)
+        if follow_redirections:
             while page.redirection is not None:
-                page = WikiPage(page.redirection)
+                page = WikiPage(page.redirection, follow_redirections=False)
         return page
 
     @property

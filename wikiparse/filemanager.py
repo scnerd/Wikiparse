@@ -8,9 +8,8 @@ aid in debugging.
 '''
 
 global WIKITEXT, JSON
-#global PAGE_INDEX, REVISION_INDEX
 
-import gzip as zip
+import zipfile
 import os, json, re, atexit
 from unidecode import unidecode
 
@@ -20,17 +19,30 @@ JSON = "json"
 WIKIPARSE_DIR = os.path.dirname(__file__)
 
 config = json.load(open(os.path.join(WIKIPARSE_DIR, "config.json")))
-root_dir = os.path.join(WIKIPARSE_DIR, config['cache_dir'])
-#PAGE_INDEX = os.path.join(root_dir, config['page_index'])
-#PAGE_INDEX_RAW = PAGE_INDEX.rpartition(".")[0] + ".json"
-#REVISION_INDEX = config['revision_index']
+wd = os.getcwd()
+os.chdir(WIKIPARSE_DIR)
+archive_path = os.path.abspath(os.path.expanduser(config['cache_zip']))
+os.chdir(wd)
+text_encoding = config['encoding']
 disallowed_filenames = config['disallowed_file_names']
 
-dir_nesting = config['dir_nesting']
+global page_archive
+page_archive = None
 
-global index, index_num
-#index_num = None
-#index = None
+def open_archive(mode):
+    global page_archive
+    if page_archive is not None:
+       page_archive.close()
+    page_archive = zipfile.ZipFile(archive_path, mode, zipfile.ZIP_LZMA, allowZip64=True)
+
+
+if not os.path.exists(archive_path):
+    # Creates skeleton archive
+    open_archive('w')
+open_archive('r')
+
+def enable_writing():
+    open_archive('a')
 
 if config['verbose_filemanager']:
     def _verbose(txt):
@@ -38,17 +50,6 @@ if config['verbose_filemanager']:
 else:
     def _verbose(txt):
         pass
-
-def _pick_dir(cleaned):
-    cleaned = [c.upper() for c in cleaned if c.isalnum()]
-    return tuple([cleaned[i] for i in range(min(len(cleaned), dir_nesting))])
-
-cleaner = re.compile(r"[^\(\)\-\_\.\s\w\d]|^[^\w\d]")
-def _clean_title(title):
-    clean = cleaner.sub("_", unidecode(title).strip())[:200].lower()
-    if clean in disallowed_filenames:
-        clean = disallowed_filenames[clean.lower()]
-    return clean
 
 def possible_titles(partial_title):
     '''Retrieves all cached pages starting with the specified title text.
@@ -58,67 +59,22 @@ def possible_titles(partial_title):
     :returns: A generator that provides the possible title names matching the specified title beginning
     :rtype: Generator of str
     '''
-    cleaned = _clean_title(partial_title)
-    dir = os.path.join(root_dir, *_pick_dir(cleaned))
-    for dirpath, dirnames, filenames in os.walk(dir):
-        filenames = sorted(set(f.rpartition('.')[0] if '.' in f else f for f in filenames if f.lower().startswith(cleaned)))
-        yield from filenames
+    partial_title = bytes(partial_title, text_encoding)
+    return (title for title in page_archive.namelist() if title.startswith(partial_title))
 
 def _pick_path(title, ext):
-    cleaned = _clean_title(title)
-    dirs = _pick_dir(cleaned)
-    return os.path.join(os.path.join(root_dir, *dirs), "%s.%s" % (cleaned, ext))
+    return bytes(("%s.%s" % (title, ext)), text_encoding)
 
-def start_recording_index():
-    '''When opening a wikipedia archive, this initializes the writing of the index file (not really used yet)
-    '''
-    #global index, index_num
-    #index = open(PAGE_INDEX_RAW, "w", 1000000)
-    #index.write("{")
-    #index_num = 1
-    #atexit.register(finish_recording_index)
-    pass
-
-def finish_recording_index():
-    '''When opening a wikipedia archive, this finalizes the writing of the index file (not really used yet)
-    '''
-    #global index, index_num
-    #index.write('-1:["",""]}')
-    #index.flush()
-    #index.close()
-    #with open(PAGE_INDEX_RAW, 'rb') as raw:
-    #    with zip.open(PAGE_INDEX, 'wb') as zipper:
-    #        while True:
-    #            data = raw.read(1000000)
-    #            if not data:
-    #                break
-    #            zipper.write(data)
-    #os.remove(PAGE_INDEX_RAW)
-    #zip.open(PAGE_INDEX, 'wb').write(json.dumps({i: index[i] for i in range(len(index))}))
-    pass
-
-def read_index():
-    '''Reads in the index file as a json object
-    '''
-    #return json.loads(zip.open(PAGE_INDEX, 'rb').read())
-    pass
-
-known_good_dirs = set()
 def _write_page(title, page_type, content, overwrite=False):
-    global known_good_dirs #, index, index_num
+    if page_archive.mode is not 'a':
+        open_archive('a')
     path = _pick_path(title, page_type)
     _verbose("Writing to %s" % path)
-    #if index is not None:
-    #    index.write('%d:["%s","%s"],' % (index_num, title, path))
-    #    index_num += 1
-    if not overwrite and os.path.exists(path):
-        _verbose("File already exists, aborting write")
+    if not overwrite and path in page_archive.namelist():
+        _verbose("Failed to write %s, file already exists (enable overwriting to dismiss this)" % title)
         return
-    dirs_path = os.path.dirname(path)
-    if dirs_path not in known_good_dirs and not os.path.exists(dirs_path):
-        os.makedirs(dirs_path)
-    known_good_dirs.add(dirs_path)
-    zip.open(path, "wb").write(bytes(content, 'UTF-8') if type(content) is not bytes else content)
+    content = bytes(content, text_encoding) if type(content) is not bytes else content
+    page_archive.writestr(path, content)
 
 def write_wikitext(title, content, overwrite=False):
     '''Writes a wikitext page to its appropriate file
@@ -144,23 +100,12 @@ def write_json(title, content, overwrite=False):
     '''
     _write_page(title, JSON, content, overwrite)
 
-def reset_page(title):
-    '''Deletes any cached versions of the specified page so it can be updated when next requested
-
-    :param title: The title of the page to delete
-    '''
-    for file_type in [WIKITEXT, JSON]:
-        path = _pick_path(title, file_type)
-        if os.path.exists(path):
-            os.remove(path)
-
-
 def _read_page(title, type):
     path = _pick_path(title, type)
     _verbose("Reading from %s" % path)
-    if(os.path.isfile(path)):
-        return str(zip.open(path, "rb").read(), 'UTF-8')
-    else:
+    try:
+        return str(page_archive.read(path), text_encoding)
+    except KeyError:
         _verbose("Read failed, file does not exist")
         return None
 
@@ -170,12 +115,12 @@ def _fetch_wikitext(title):
     _verbose("Pulling '%s' from wikipedia" % title)
     params = urllib.parse.urlencode({'action': 'raw', 'title': title})
     try:
-        wikitext = url.urlopen(config['fetch_url'] % params).read()
+        wikitext = str(url.urlopen(config['fetch_url'] % params).read(), text_encoding)
     except urllib.error.HTTPError:
         return None
     if config['cache_pulls']:
         write_wikitext(title, wikitext)
-    return str(wikitext, 'UTF-8')
+    return wikitext
 
 gateway = None
 def _initialize_wikiparser():

@@ -1,9 +1,8 @@
 {
     "try_pulls": true,
     "cache_pulls": true,
-    "cache_dir": "./wikipedia",
-    "page_index": "pages.zip",
-    "dir_nesting": 3,
+    "cache_zip": "~/wikipedia.zip",
+    "encoding": "UTF-8",
     "fetch_url": "http://en.wikipedia.org/w/index.php?%s",
     "disallowed_file_names": {
         "con": "special_con",
