@@ -471,6 +471,8 @@ public class WikiToJson extends Visitor {
 				 * The fourth marks the ">" that closes the closing tag        (<ref>url description</ref_>_)
 				 * At this part, resume parsing where you left off 
 				 */
+				 
+				 //TODO: deal with abbreviated "xml" codes (?) (&ndash;)
 				if(XmlEntityRef.class.isAssignableFrom(child.getClass())) {
 					inXmlRefCt = (inXmlRefCt + 1) % 4;
 					if(inXmlRefCt == 1)

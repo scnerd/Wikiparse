@@ -58,11 +58,11 @@ def possible_titles(partial_title):
     :returns: A generator that provides the possible title names matching the specified title beginning
     :rtype: Generator of str
     '''
-    cleaned = _clean_title(partial_title).lower()
+    cleaned = _clean_title(partial_title)
     dir = os.path.join(root_dir, *_pick_dir(cleaned))
     for dirpath, dirnames, filenames in os.walk(dir):
-        filenames = list(filenames)
-        yield from (f.rpartition('.')[0] if '.' in f else f for f in filenames if f.lower().startswith(cleaned))
+        filenames = sorted(set(f.rpartition('.')[0] if '.' in f else f for f in filenames if f.lower().startswith(cleaned)))
+        yield from filenames
 
 def _pick_path(title, ext):
     cleaned = _clean_title(title)
