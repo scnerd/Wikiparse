@@ -2,6 +2,7 @@
     "try_pulls": true,
     "cache_pulls": true,
     "cache_zip": "~/wikipedia.zip",
+    "compression_level": 1,
     "encoding": "UTF-8",
     "fetch_url": "http://en.wikipedia.org/w/index.php?%s",
     "disallowed_file_names": {

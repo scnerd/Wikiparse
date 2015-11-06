@@ -55,7 +55,7 @@ filemanager.enable_writing()
 
 DB_NAME = "wikipedia.sqlite"
 
-import gzip, argparse
+import gzip, argparse, re
 from xml.etree import ElementTree as ET
 import atexit
 from time import time
@@ -91,7 +91,9 @@ def split_xml(xml_stream):
     if not args.verbose:
         try:
             from tqdm import tqdm
-            all_pages = tqdm(find_pages(xml_stream))
+            num_pages = re.search(r'p(\d+)p(\d+)', args.filename)
+            num_pages = None if num_pages is None else int(num_pages.group(2)) - int(num_pages.group(1)) + 1
+            all_pages = tqdm(find_pages(xml_stream), total=num_pages)
             has_progress_bar = True
         except ImportError:
             all_pages = find_pages(xml_stream)

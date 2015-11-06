@@ -12,6 +12,28 @@ global WIKITEXT, JSON
 import zipfile
 import os, json, re, atexit
 from unidecode import unidecode
+import atexit
+
+# http://stackoverflow.com/questions/842557/how-to-prevent-a-block-of-code-from-being-interrupted-by-keyboardinterrupt-in-py
+import signal
+import logging
+
+class DelayedKeyboardInterrupt(object):
+    def __enter__(self):
+        self.signal_received = False
+        self.old_handler = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, self.handler)
+
+    def handler(self, signal, frame):
+        self.signal_received = (signal, frame)
+        logging.debug('SIGINT received. Delaying KeyboardInterrupt.')
+
+    def __exit__(self, type, value, traceback):
+        signal.signal(signal.SIGINT, self.old_handler)
+        if self.signal_received:
+            self.old_handler(*self.signal_received)
+           
+# END SO CODE
 
 WIKITEXT = "wtxt"
 JSON = "json"
@@ -28,12 +50,20 @@ disallowed_filenames = config['disallowed_file_names']
 
 global page_archive
 page_archive = None
+compression_levels = [zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED, zipfile.ZIP_BZIP2, zipfile.ZIP_LZMA]
+compression = compression_levels[config['compression_level']]
 
+def report():
+    print("Archive has been closed properly")
 def open_archive(mode):
     global page_archive
     if page_archive is not None:
-       page_archive.close()
-    page_archive = zipfile.ZipFile(archive_path, mode, zipfile.ZIP_LZMA, allowZip64=True)
+        page_archive.close()
+        atexit.unregister(report)
+        atexit.unregister(page_archive.close)
+    page_archive = zipfile.ZipFile(archive_path, mode, compression, allowZip64=True)
+    atexit.register(report)
+    atexit.register(page_archive.close)
 
 
 if not os.path.exists(archive_path):
@@ -72,20 +102,28 @@ def _pick_path(title, ext):
     return bytes(("%s.%s" % (title, ext)), text_encoding)
 
 def _write_page(title, page_type, content, overwrite=False):
-    if page_archive.mode is not 'a':
-        open_archive('a')
-    path = _pick_path(title, page_type)
-    _verbose("Writing to %s" % path)
-    if not overwrite and path.decode(text_encoding) in page_archive.namelist():
-        _verbose("Failed to write %s, file already exists (enable overwriting to dismiss this)" % title)
-        return
-    content = bytes(content, text_encoding) if type(content) is not bytes else content
-    try:
-        info = page_archive.getinfo(path)
-        page_archive.writestr(info, content) # Overwrites file
-    except KeyError:
-        page_archive.writestr(path, content) # Writes new file
-        
+    # This prevents corruption of the zip file if the write is cancelled by a keyboard interrupt
+    with DelayedKeyboardInterrupt():
+        if content is None:
+            return
+        if page_archive.mode is not 'a':
+            open_archive('a')
+        path = _pick_path(title, page_type)
+        _verbose("Writing to %s" % path)
+        if not overwrite and path.decode(text_encoding) in page_archive.namelist():
+            _verbose("Failed to write %s, file already exists (enable overwriting to dismiss this)" % title)
+            return
+        try:
+            content = bytes(content, text_encoding) if type(content) is not bytes else content
+        except TypeError as ex:
+            print(str(ex))
+            print("Tried to convert '%s' to 'bytes'" % str(type(content)))
+        ftarget = path
+        try:
+            ftarget = page_archive.getinfo(path)
+        except KeyError:
+            pass
+        page_archive.writestr(ftarget, content)
 
 def write_wikitext(title, content, overwrite=False):
     '''Writes a wikitext page to its appropriate file
@@ -115,7 +153,8 @@ def _read_page(title, type):
     path = _pick_path(title, type)
     _verbose("Reading from %s" % path)
     try:
-        return str(page_archive.read(path), text_encoding)
+        with DelayedKeyboardInterrupt():
+            return str(page_archive.read(path), text_encoding)
     except KeyError:
         _verbose("Read failed, file does not exist")
         return None
